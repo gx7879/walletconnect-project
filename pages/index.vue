@@ -45,9 +45,15 @@
       </button>
       <button
         class="border-2 border-gray-300 rounded px-3 py-1"
-        @click="approve"
+        @click="usdtApprove"
       >
-        approve
+        usdtApprove
+      </button>
+      <button
+        class="border-2 border-gray-300 rounded px-3 py-1"
+        @click="nftApprove"
+      >
+        nftApprove
       </button>
       <button
         class="border-2 border-gray-300 rounded px-3 py-1"
@@ -212,10 +218,17 @@ export default {
         .call()
       console.log(result)
     },
-    async approve() {
+    async usdtApprove() {
       const _this = this
       const result = await this.usdtContract.methods
-        .approve('0xed9A3c81F5b57FdB4467fDB92ff936EF49bE587D', 750000000)
+        .approve(USDT_CONTRACT_ADDRESS, 750000000)
+        .send({ from: _this.walletObj.userAddress })
+      console.log(result)
+    },
+    async nftApprove() {
+      const _this = this
+      const result = await this.nftContract.methods
+        .approve(NFT_CONTRACT_ADDRESS, 750000000)
         .send({ from: _this.walletObj.userAddress })
       console.log(result)
     },
