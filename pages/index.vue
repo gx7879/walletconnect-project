@@ -30,13 +30,20 @@
     >
       Connected
     </button>
-    <button
-      v-if="contract"
-      class="border-2 border-gray-300 rounded px-3 py-1"
-      @click="approve"
-    >
-      approve
-    </button>
+    <template v-if="contract">
+      <button
+        class="border-2 border-gray-300 rounded px-3 py-1"
+        @click="getBalanceOf"
+      >
+        BalanceOf
+      </button>
+      <button
+        class="border-2 border-gray-300 rounded px-3 py-1"
+        @click="approve"
+      >
+        approve
+      </button>
+    </template>
   </div>
 </template>
 
@@ -174,10 +181,18 @@ export default {
         .getBalance(_this.walletObj.userAddress)
         .then((res) => (res ? utils.fromWei(res.toString(), 'ether') : 0))
     },
+    async getBalanceOf() {
+      // const _this = this
+      const balanceResult = await this.contract.methods
+        .balanceOf('0xe370a5d6D379eF76171aDcd9Cc5126456deb754B')
+        .call()
+      console.log(balanceResult)
+    },
     async approve() {
+      const _this = this
       const result = await this.contract.methods
         .approve('0xed9A3c81F5b57FdB4467fDB92ff936EF49bE587D', 750000000)
-        .call()
+        .send({ from: _this.walletObj.userAddress })
       console.log(result)
     },
   },

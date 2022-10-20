@@ -1,6 +1,6 @@
 import WalletConnectProvider from '@walletconnect/web3-provider'
 
-const CONTRACT_ADDRESS = '0xed9A3c81F5b57FdB4467fDB92ff936EF49bE587D'
+const CONTRACT_ADDRESS = '0x5894E7526B7a7dc14F16906855F14788E244D42D'
 
 const providerOptions = {
   walletconnect: {
