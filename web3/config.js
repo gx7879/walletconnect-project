@@ -1,6 +1,7 @@
 import WalletConnectProvider from '@walletconnect/web3-provider'
 
-const CONTRACT_ADDRESS = '0x5894E7526B7a7dc14F16906855F14788E244D42D'
+const USDT_CONTRACT_ADDRESS = '0x5894E7526B7a7dc14F16906855F14788E244D42D'
+const NFT_CONTRACT_ADDRESS = '0x5894E7526B7a7dc14F16906855F14788E244D42D'
 
 const providerOptions = {
   walletconnect: {
@@ -12,4 +13,4 @@ const providerOptions = {
   },
 }
 
-export { CONTRACT_ADDRESS, providerOptions }
+export { USDT_CONTRACT_ADDRESS, NFT_CONTRACT_ADDRESS, providerOptions }

@@ -30,7 +30,7 @@
     >
       Connected
     </button>
-    <template v-if="contract">
+    <template v-if="walletObj.web3">
       <button
         class="border-2 border-gray-300 rounded px-3 py-1"
         @click="getBalanceOf"
@@ -39,9 +39,21 @@
       </button>
       <button
         class="border-2 border-gray-300 rounded px-3 py-1"
+        @click="allowance"
+      >
+        allowance
+      </button>
+      <button
+        class="border-2 border-gray-300 rounded px-3 py-1"
         @click="approve"
       >
         approve
+      </button>
+      <button
+        class="border-2 border-gray-300 rounded px-3 py-1"
+        @click="basicMint"
+      >
+        basicMint
       </button>
     </template>
   </div>
@@ -50,8 +62,8 @@
 <script>
 import Web3, { utils } from 'web3'
 import Web3Modal from 'web3modal'
-import { ABI } from '@/web3/abi'
-import { providerOptions, CONTRACT_ADDRESS } from '@/web3/config'
+import { USDT_ABI, NFT_ABI } from '@/web3/abi'
+import { providerOptions, USDT_CONTRACT_ADDRESS, NFT_CONTRACT_ADDRESS } from '@/web3/config'
 import { getChainData } from '@/web3/tools'
 // import UseWallet from '@/composables/wallet'
 // const { onConnect } = UseWallet()
@@ -90,10 +102,15 @@ export default {
     // status({ $store }) {
     //   return $store.state.status
     // },
-    contract({ walletObj }) {
+    usdtContract({ walletObj }) {
       const web3 = walletObj.web3
       console.log(walletObj)
-      return web3 ? new web3.eth.Contract(ABI, CONTRACT_ADDRESS) : null
+      return web3 ? new web3.eth.Contract(USDT_ABI, USDT_CONTRACT_ADDRESS) : null
+    },
+    nftContract({ walletObj }) {
+      const web3 = walletObj.web3
+      console.log(walletObj)
+      return web3 ? new web3.eth.Contract(NFT_ABI, NFT_CONTRACT_ADDRESS) : null
     },
   },
   mounted() {
@@ -182,16 +199,30 @@ export default {
         .then((res) => (res ? utils.fromWei(res.toString(), 'ether') : 0))
     },
     async getBalanceOf() {
-      // const _this = this
-      const balanceResult = await this.contract.methods
-        .balanceOf('0xe370a5d6D379eF76171aDcd9Cc5126456deb754B')
+      const _this = this
+      const balanceResult = await this.nftContract.methods
+        .balanceOf(_this.walletObj.userAddress)
         .call()
       console.log(balanceResult)
     },
+    async allowance() {
+      const _this = this
+      const result = await this.usdtContract.methods
+        .allowance(_this.walletObj.userAddress, USDT_CONTRACT_ADDRESS)
+        .call()
+      console.log(result)
+    },
     async approve() {
       const _this = this
-      const result = await this.contract.methods
+      const result = await this.usdtContract.methods
         .approve('0xed9A3c81F5b57FdB4467fDB92ff936EF49bE587D', 750000000)
+        .send({ from: _this.walletObj.userAddress })
+      console.log(result)
+    },
+    async basicMint() {
+      const _this = this
+      const result = await this.nftContract.methods
+        .basicMint(1)
         .send({ from: _this.walletObj.userAddress })
       console.log(result)
     },
