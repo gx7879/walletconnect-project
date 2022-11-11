@@ -1,13 +1,14 @@
 <template>
   <div>
-    <div v-if="fetching">
+    walletObj: {{ walletObj }}
+    <div v-if="wallet.connected">
       <button
         class="border-2 border-blue-300 rounded px-3 py-1"
         @click="onConnect"
       >
         Connected
       </button>
-      <h3>Address: {{ walletObj.userAddress }}</h3>
+      <h3>Address: {{ walletObj.address }}</h3>
       <h3>ChainId: {{ walletObj.chainId }}</h3>
       <h3>Balance: {{ balance }}</h3>
       <button
@@ -73,9 +74,9 @@ import { getChainData } from '@/web3/tools'
 // const { onConnect } = UseWallet()
 // import { CONTRACT_ADDRESS, providerOptions } from '@/web3/config'
 const INITIAL_STATE = {
-  web3: null,
-  provider: null,
-  userAddress: '',
+  // web3: null,
+  // provider: null,
+  address: '',
   connected: false,
   chainId: 5,
   networkId: 5,
@@ -85,8 +86,7 @@ export default {
   name: 'IndexPage',
   data() {
     return {
-      walletObj: Object.assign({}, INITIAL_STATE),
-      fetching: false,
+      wallet: INITIAL_STATE,
       balance: 0,
       web3: null,
       web3Modal: null,
@@ -106,16 +106,17 @@ export default {
     // status({ $store }) {
     //   return $store.state.status
     // },
-    usdtContract({ walletObj }) {
-      const web3 = walletObj.web3
-      console.log(walletObj)
+    walletObj({ $store }) {
+      return $store.state.walletObj
+    },
+    usdtContract({ $store }) {
+      const web3 = $store.state.web3
       return web3
         ? new web3.eth.Contract(USDT_ABI, USDT_CONTRACT_ADDRESS)
         : null
     },
-    nftContract({ walletObj }) {
-      const web3 = walletObj.web3
-      console.log(walletObj)
+    nftContract({ $store }) {
+      const web3 = $store.state.web3
       return web3 ? new web3.eth.Contract(NFT_ABI, NFT_CONTRACT_ADDRESS) : null
     },
   },
@@ -127,62 +128,80 @@ export default {
     //   theme: 'dark',
     //   accentColor: 'blackWhite',
     // })
+
     const _this = this
     this.web3Modal = new Web3Modal({
       theme: 'dark',
-      network: getChainData(_this.walletObj.chainId).network,
+      network: getChainData(_this.wallet.chainId).network,
       cacheProvider: false,
       providerOptions,
     })
   },
   methods: {
     async onConnect() {
-      const _this = this
-      const provider = await _this.web3Modal.connect()
+      try {
+        const _this = this
+        const provider = await _this.web3Modal.connect()
 
-      await _this.subscribeProvider(provider)
+        await _this.subscribeProvider(provider)
 
-      const web3 = new Web3(provider)
-      const accounts = await web3.eth.getAccounts()
+        const web3 = new Web3(provider)
+        const accounts = await web3.eth.getAccounts()
 
-      const address = accounts[0]
+        const address = accounts[0]
 
-      const networkId = await web3.eth.net.getId()
+        const networkId = await web3.eth.net.getId()
 
-      const chainId = await web3.eth.getChainId() // 坑逼 注意版本 chainId
+        const chainId = await web3.eth.getChainId() // 坑逼 注意版本 chainId
 
-      this.walletObj.web3 = web3
-      this.walletObj.provider = provider
-      this.walletObj.connected = true
-      this.walletObj.userAddress = address
-      this.walletObj.chainId = chainId
-      this.walletObj.networkId = networkId
-      this.$store.commit('setWallet', this.walletObj)
-      this.$store.commit('setWalletStatus', true)
-      await _this.getAccountAssets()
+        // this.wallet.web3 = web3
+        // this.wallet.provider = provider
+        // this.wallet.connected = true
+        // this.wallet.address = address
+        // this.wallet.chainId = chainId
+        // this.wallet.networkId = networkId
+        this.wallet = {
+          // web3,
+          // provider,
+          connected: true,
+          address,
+          chainId,
+          networkId,
+        }
+        this.$store.commit('setWallet', _this.wallet)
+        this.web3 = web3
+        this.$store.commit('setWeb3', _this.web3)
+
+        await _this.getAccountAssets()
+      } catch (error) {
+        console.log(error)
+      }
     },
     subscribeProvider(provider) {
       const _this = this
       if (!provider.on) {
         return
       }
-      provider.on('disconnect', () => _this.disconnect())
+      // provider.on('disconnect', () => _this.disconnect())
       provider.on('accountsChanged', async (accounts) => {
         // eslint-disable-next-line prefer-destructuring
-        _this.walletObj.userAddress = accounts[0]
+        this.$store.commit('setWallet', { address: accounts[0] })
+        // _this.walletObj.address = accounts[0]
         await _this.getAccountAssets()
       })
       provider.on('chainChanged', async (chainId) => {
         console.log('333', chainId)
-        const networkId = await _this.walletObj?.web3?.eth?.net.getId()
-        _this.walletObj.chainId = chainId
-        _this.walletObj.networkId = networkId
+        const networkId = await _this.web3?.eth?.net.getId()
+        _this.wallet.chainId = chainId
+        _this.wallet.networkId = networkId
+        this.$store.commit('setWallet', { chainId, networkId })
         await _this.getAccountAssets()
       })
     },
     async disconnect() {
       const _this = this
-      const { web3 } = this.walletObj
+      // const { web3 } = this.wallet
+      const web3 = this.web3
       if (web3 && web3.currentProvider && web3.currentProvider.close) {
         await web3.currentProvider.close()
       }
@@ -190,33 +209,33 @@ export default {
       this.web3Modal.clearCachedProvider()
       this.balance = 0
       Object.keys(INITIAL_STATE).forEach((e) => {
-        _this.walletObj[e] = INITIAL_STATE[e]
+        _this.wallet[e] = INITIAL_STATE[e]
       })
+      this.$store.commit('setWallet', { ...INITIAL_STATE })
     },
     async getAccountAssets() {
       const _this = this
-      this.fetching = true
       // get account balances
 
       this.balance = await _this.getUserBalance()
     },
     getUserBalance() {
       const _this = this
-      return _this.walletObj.web3.eth
-        .getBalance(_this.walletObj.userAddress)
+      return _this.web3.eth
+        .getBalance(_this.wallet.address)
         .then((res) => (res ? utils.fromWei(res.toString(), 'ether') : 0))
     },
     async getBalanceOf() {
       const _this = this
       const balanceResult = await this.nftContract.methods
-        .balanceOf(_this.walletObj.userAddress)
+        .balanceOf(_this.wallet.address)
         .call()
       console.log(balanceResult)
     },
     async allowance() {
       const _this = this
       const result = await this.usdtContract.methods
-        .allowance(_this.walletObj.userAddress, USDT_CONTRACT_ADDRESS)
+        .allowance(_this.wallet.address, USDT_CONTRACT_ADDRESS)
         .call()
       console.log(result)
     },
@@ -224,21 +243,21 @@ export default {
       const _this = this
       const result = await this.usdtContract.methods
         .approve(USDT_CONTRACT_ADDRESS, 750000000)
-        .send({ from: _this.walletObj.userAddress })
+        .send({ from: _this.wallet.address })
       console.log(result)
     },
     async nftApprove() {
       const _this = this
       const result = await this.nftContract.methods
         .approve(NFT_CONTRACT_ADDRESS, 750000000)
-        .send({ from: _this.walletObj.userAddress })
+        .send({ from: _this.wallet.address })
       console.log(result)
     },
     async basicMint() {
       const _this = this
       const result = await this.nftContract.methods
         .basicMint(1)
-        .send({ from: _this.walletObj.userAddress })
+        .send({ from: _this.wallet.address })
       console.log(result)
     },
   },

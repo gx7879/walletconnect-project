@@ -1,16 +1,17 @@
 export const state = () => ({
-  walletObj: { address: '', chainId: '', balance: '' },
-  fetching: false,
+  walletObj: {
+    address: '',
+    connected: false,
+    chainId: 5,
+    networkId: 5,
+  },
 })
 
 export const mutations = {
   setWallet(state, payload) {
-    // state.walletObj = payload
-    Object.keys(payload).forEach((item) => {
-      state.walletObj[item] = payload[item]
-    })
+    state.walletObj = payload
   },
-  setWalletStatus(state, payload) {
-    state.status = payload
-  },
+  setWeb3(state, payload) {
+    state.web3 = payload
+  }
 }
