@@ -1,12 +1,6 @@
 <template>
   <div>
     <div v-if="fetching">
-      <!-- <button
-        class="border-2 border-blue-300 rounded px-3 py-1"
-        @click="connectUserWallet"
-      >
-        Connected
-      </button> -->
       <button
         class="border-2 border-blue-300 rounded px-3 py-1"
         @click="onConnect"
@@ -69,7 +63,11 @@
 import Web3, { utils } from 'web3'
 import Web3Modal from 'web3modal'
 import { USDT_ABI, NFT_ABI } from '@/web3/abi'
-import { providerOptions, USDT_CONTRACT_ADDRESS, NFT_CONTRACT_ADDRESS } from '@/web3/config'
+import {
+  providerOptions,
+  USDT_CONTRACT_ADDRESS,
+  NFT_CONTRACT_ADDRESS,
+} from '@/web3/config'
 import { getChainData } from '@/web3/tools'
 // import UseWallet from '@/composables/wallet'
 // const { onConnect } = UseWallet()
@@ -111,7 +109,9 @@ export default {
     usdtContract({ walletObj }) {
       const web3 = walletObj.web3
       console.log(walletObj)
-      return web3 ? new web3.eth.Contract(USDT_ABI, USDT_CONTRACT_ADDRESS) : null
+      return web3
+        ? new web3.eth.Contract(USDT_ABI, USDT_CONTRACT_ADDRESS)
+        : null
     },
     nftContract({ walletObj }) {
       const web3 = walletObj.web3
@@ -157,6 +157,8 @@ export default {
       this.walletObj.userAddress = address
       this.walletObj.chainId = chainId
       this.walletObj.networkId = networkId
+      this.$store.commit('setWallet', this.walletObj)
+      this.$store.commit('setWalletStatus', true)
       await _this.getAccountAssets()
     },
     subscribeProvider(provider) {
@@ -164,7 +166,7 @@ export default {
       if (!provider.on) {
         return
       }
-      provider.on('close', () => _this.disconnect())
+      provider.on('disconnect', () => _this.disconnect())
       provider.on('accountsChanged', async (accounts) => {
         // eslint-disable-next-line prefer-destructuring
         _this.walletObj.userAddress = accounts[0]
