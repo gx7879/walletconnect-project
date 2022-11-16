@@ -55,6 +55,12 @@
       >
         basicMint
       </button>
+      <button
+        class="border-2 border-gray-300 rounded px-3 py-1"
+        @click="goldMint"
+      >
+        goldMint
+      </button>
     </template>
   </div>
 </template>
@@ -157,8 +163,6 @@ export default {
       this.walletObj.userAddress = address
       this.walletObj.chainId = chainId
       this.walletObj.networkId = networkId
-      this.$store.commit('setWallet', this.walletObj)
-      this.$store.commit('setWalletStatus', true)
       await _this.getAccountAssets()
     },
     subscribeProvider(provider) {
@@ -166,7 +170,7 @@ export default {
       if (!provider.on) {
         return
       }
-      provider.on('disconnect', () => _this.disconnect())
+      provider.on('close', () => _this.disconnect())
       provider.on('accountsChanged', async (accounts) => {
         // eslint-disable-next-line prefer-destructuring
         _this.walletObj.userAddress = accounts[0]
@@ -238,6 +242,13 @@ export default {
       const _this = this
       const result = await this.nftContract.methods
         .basicMint(1)
+        .send({ from: _this.walletObj.userAddress })
+      console.log(result)
+    },
+    async goldMint() {
+      const _this = this
+      const result = await this.nftContract.methods
+        .goldMint(1)
         .send({ from: _this.walletObj.userAddress })
       console.log(result)
     },
